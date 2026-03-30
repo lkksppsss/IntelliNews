@@ -1,0 +1,24 @@
+[submodule "Python/news_crawler_scrapy"]
+	path = Python/news_crawler_scrapy
+	url = https://github.com/lkksppsss/news_crawler_scrapy.git
+[submodule "Python/news_crawler_mvp"]
+	path = Python/news_crawler_mvp
+	url = https://github.com/lkksppsss/news_crawler_mvp.git
+[submodule "Python/crawler_grpc_server"]
+	path = Python/crawler_grpc_server
+	url = https://github.com/lkksppsss/crawler_grpc_server.git
+[submodule "Python/intellinews-app"]
+	path = Python/intellinews-app
+	url = https://github.com/lkksppsss/intellinews-app.git
+[submodule "Python/intellinews_fastapi"]
+	path = Python/intellinews_fastapi
+	url = https://github.com/lkksppsss/intellinews_fastapi.git
+[submodule "Python/intellinews-proto"]
+	path = Python/intellinews-proto
+	url = https://github.com/lkksppsss/intellinews-proto.git
+[submodule "C#/IntelliNewsGateway"]
+	path = "C#/IntelliNewsGateway"
+	url = https://github.com/lkksppsss/IntelliNewsGateway.git
+[submodule "PHP/laravel_notify"]
+	path = PHP/laravel_notify
+	url = https://github.com/lkksppsss/laravel_notify.git
