@@ -15,16 +15,43 @@
 
 ## 🎯 當前工作焦點
 
+**Phase 2 已完成 ✅（2026-03-30）**
+
 - ✅ FastAPI 建立完成（GET /news、GET /news/{id}、POST /crawl/{spider} via RabbitMQ）
 - ✅ FastAPI → RabbitMQ → Scrapy worker → gRPC Server → DB 整條鏈路打通
 - ✅ C# Gateway 核心完成（YARP Proxy、JWT 驗證、Request Logging、CORS、401 保護）
 - ✅ Django 改為 Poetry 環境、PostgreSQL、簽發 JWT（simplejwt）
 - ✅ Django 新聞資料改透過 Gateway 取得（JWT service token）
-- 進行中：crawler_grpc_server 隨需求同步開發
-- 暫緩：news_crawler_scrapy 錯誤處理（基礎架構優先）
-- 暫緩：Incremental Crawling（FastAPI + 整體串接完成後再補）
-- 暫緩：Log 蒐集專案（基礎架構完成後加分項）
-- 暫緩：AI Module（Phase 3）
+- ✅ Django → Gateway(:5138) → FastAPI → PostgreSQL 完整鏈路打通（gateway_client.py）
+
+整體目標：架構完整、各服務串聯、可部署展示，作為求職主力作品
+
+**Phase 2.5（當前）— 補齊核心鏈路與前台功能**
+- ✅ Scrapy：PublishArticleCreatedPipeline（detail 存好後發布到 article_created_queue）
+- ✅ Laravel：ConsumeArticleCreated command（RabbitMQ consumer）
+- ✅ Laravel：DiscordChannel 實作
+- ⏳ Laravel：ChannelDispatcher 加入 discord case
+- ⏳ Laravel：ArticleCreatedHandler channels 改為 ['log', 'discord']
+- ⏳ Laravel：.env 加 RABBITMQ_* 和 DISCORD_WEBHOOK_URL
+- ⏳ Django：搜尋 / 過濾功能
+- ⏳ Django：UserSourcePreference（用戶追蹤特定來源，日後推播用）
+
+Phase 2.5 完成後 → Dockerfile + 部署到 Railway（含 PostgreSQL + RabbitMQ）
+
+**Phase 3a — 自動化 + 可觀測性**
+- ⏳ n8n 排程觸發爬蟲（加分在視覺化 workflow，可用 cron 替代）
+- ⏳ Log 蒐集（Go log collector → ELK）
+
+**Phase 3b — Discord Bot + AI**
+- ⏳ Discord Bot：指令觸發爬蟲 + 查新聞（不含 AI）
+- ⏳ Discord Bot：查詢 ELK log（admin only，自然語言 → AI Agent / MCP Server → Elasticsearch query）
+- ⏳ AI RAG：LangChain + Ollama（admin only，地端，處理機敏資料）
+
+**Phase 4 — 收尾**
+- ⏳ 用戶偏好推播（追蹤來源 → 每日 Discord 通知）
+- ⏳ Scrapy 完整錯誤處理 + Incremental Crawling
+- ⏳ Dockerfile + CI/CD 全服務補齊
+- ⏳ MAUI（個人技能練習，不影響主線）
 
 > 每次開工前更新此區塊
 
@@ -41,7 +68,7 @@
 | C# Gateway       | ASP.NET Core Web API（唯一對外端口）           | 進行中       |
 | API              | FastAPI（Internal only）                      | 60%          |
 | Frontend         | Django 5.2, Chart.js                          | 85%          |
-| Notification     | Laravel 12, Queue, Email/Webhook              | 60%          |
+| Notification     | Laravel 12, Queue, Email/Webhook              | 40%          |
 | Message Queue    | RabbitMQ                                      | 整合中       |
 | AI - RAG         | LangChain, Qdrant, Ollama（本地 LLM）         | 0%（計劃）   |
 | AI - Agent       | LangChain Agent, Tool Calling                 | 0%（計劃）   |
@@ -76,8 +103,9 @@ Browser / 外部 Client
   │ gRPC（直連，不走 Gateway）
   ▼
 [crawler_grpc_server] ←→ [Shared Data DB (PostgreSQL)]
-  │
-  │ RabbitMQ publish
+
+[news_crawler_scrapy]（SaveNewsDetailPipeline 成功後）
+  │ RabbitMQ publish → article_created_queue
   ▼
 [RabbitMQ]
   │ consume
@@ -426,9 +454,10 @@ APScheduler 只用於：log 清理、快取管理、統計生成
 | Phase | 目標 | 狀態 |
 |-------|------|------|
 | 1 | Scrapy Pipeline 串接 + gRPC Server 基礎 RPC | ✅ 完成 |
-| 2（當前）| FastAPI（internal）+ C# Gateway（對外）+ Django 改接 Gateway | 🔄 進行中 |
-| 3a | Log 蒐集專案：各服務 structured log → ELK | ⏳ 計劃中 |
-| 3b | AI RAG：新聞向量化 + Qdrant + Ollama + Discord Bot 問答 | ⏳ 計劃中 |
-| 3c | AI Agent：維運查詢（gRPC Tool + Elasticsearch Tool）| ⏳ 計劃中 |
-| 4 | n8n 自動化 + Laravel Notify 完整串接（含 Discord Webhook）| ⏳ 計劃中 |
-| 5 | Scrapy 完整錯誤處理 + Incremental Crawling + MAUI Mobile | ⏳ 計劃中 |
+| 2 | FastAPI（internal）+ C# Gateway（對外）+ Django 改接 Gateway | ✅ 完成 |
+| 2.5（當前）| Laravel RabbitMQ+Discord串通、Django搜尋、UserSourcePreference | 🔄 進行中 |
+| 2.5 後    | Dockerfile + 部署到 Railway | ⏳ |
+| 3a        | n8n 排程 + Go Log Collector → ELK | ⏳ 計劃中 |
+| 3b        | Discord Bot（指令+查新聞）+ AI Agent log查詢（admin only）+ AI RAG | ⏳ 計劃中 |
+| 4         | 用戶偏好推播、Scrapy 錯誤處理、CI/CD 全服務 | ⏳ 計劃中 |
+| 5         | MAUI（個人技能練習） | ⏳ 計劃中 |
