@@ -30,9 +30,10 @@
 - ✅ Scrapy：PublishArticleCreatedPipeline（detail 存好後發布到 article_created_queue）
 - ✅ Laravel：ConsumeArticleCreated command（RabbitMQ consumer）
 - ✅ Laravel：DiscordChannel 實作
-- ⏳ Laravel：ChannelDispatcher 加入 discord case
-- ⏳ Laravel：ArticleCreatedHandler channels 改為 ['log', 'discord']
-- ⏳ Laravel：.env 加 RABBITMQ_* 和 DISCORD_WEBHOOK_URL
+- ✅ Laravel：ChannelDispatcher 加入 discord case
+- ✅ Laravel：ArticleCreatedHandler channels 改為從 NotificationRule DB 讀
+- ✅ Laravel：.env 加 RABBITMQ_* 和 DISCORD_WEBHOOK_URL（Webhook URL 待填）
+- ✅ 整條鏈路驗證：FastAPI → RabbitMQ → Scrapy → gRPC → Scrapy → RabbitMQ → Laravel → DB
 - ⏳ Django：搜尋 / 過濾功能
 - ⏳ Django：UserSourcePreference（用戶追蹤特定來源，日後推播用）
 
@@ -73,6 +74,7 @@ Phase 2.5 完成後 → Dockerfile + 部署到 Railway（含 PostgreSQL + Rabbit
 | AI - RAG         | LangChain, Qdrant, Ollama（本地 LLM）         | 0%（計劃）   |
 | AI - Agent       | LangChain Agent, Tool Calling                 | 0%（計劃）   |
 | AI - Bot         | Discord Bot（discord.py）                     | 0%（計劃）   |
+| MCP Server       | Python MCP SDK                                | 0%（計劃）   |
 | Log 蒐集         | Go（log collector）→ ELK（Elasticsearch, Logstash, Kibana）| 0%（計劃）|
 | Automation       | n8n                                           | 0%           |
 | Mobile           | MAUI                                          | 0%           |
@@ -418,6 +420,26 @@ Kibana（視覺化 dashboard）
 
 AI Agent 的維運查詢功能依賴此專案提供結構化 log 資料。
 
+### 🔌 MCP Server — 0%（Phase 3c）
+
+獨立專案 `Python/intellinews_mcp/`，讓 Claude Desktop / Claude Code 直接操作 IntelliNews。
+
+**分階段實作：**
+- Phase 2.5 後：`query_docs`（讀 README / CLAUDE.md）、`search_news`（直連 FastAPI）
+- Phase 3a 後：`get_system_status`、`query_logs`（依賴 ELK）
+- Phase 3b 後：`trigger_crawl`（依賴 Gateway API Key middleware）
+
+**權限設計：**
+- 同一個 MCP，API Key 控制層級
+- readonly key：query_docs、search_news、get_news_detail
+- admin key：trigger_crawl、get_system_status、query_logs
+
+**Gateway 端：**
+- 新增 `X-Api-Key` header 驗證 middleware，平行於現有 JWT middleware
+- API Key 存 appsettings.json / 環境變數
+
+---
+
 ### 🔄 Automation（n8n）— 0%
 
 負責：排程爬蟲、觸發 AI 流程、派送通知
@@ -459,5 +481,6 @@ APScheduler 只用於：log 清理、快取管理、統計生成
 | 2.5 後    | Dockerfile + 部署到 Railway | ⏳ |
 | 3a        | n8n 排程 + Go Log Collector → ELK | ⏳ 計劃中 |
 | 3b        | Discord Bot（指令+查新聞）+ AI Agent log查詢（admin only）+ AI RAG | ⏳ 計劃中 |
+| 3c        | MCP Server（query_docs + search_news MVP → trigger_crawl + query_logs） | ⏳ 計劃中 |
 | 4         | 用戶偏好推播、Scrapy 錯誤處理、CI/CD 全服務 | ⏳ 計劃中 |
 | 5         | MAUI（個人技能練習） | ⏳ 計劃中 |

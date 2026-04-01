@@ -28,6 +28,7 @@ cd IntelliNews
 ```bash
 psql -U postgres -c "CREATE DATABASE news_crawler;"
 psql -U postgres -c "CREATE DATABASE news_app_db;"
+psql -U postgres -c "CREATE DATABASE laravel_notify;"
 ```
 
 | DB 名稱 | 用途 |
@@ -150,10 +151,39 @@ cp .env.example .env
 php artisan key:generate
 ```
 
-編輯 `.env` 填入 DB 和 RabbitMQ 設定，然後：
+編輯 `.env`，填入以下設定：
+```
+DB_CONNECTION=pgsql
+DB_HOST=host.docker.internal
+DB_PORT=5432
+DB_DATABASE=laravel_notify
+DB_USERNAME=postgres
+DB_PASSWORD=<password>
+RABBITMQ_HOST=host.docker.internal
+RABBITMQ_PORT=5672
+RABBITMQ_USER=guest
+RABBITMQ_PASS=guest
+DISCORD_WEBHOOK_URL=<your_webhook_url>
+WWWGROUP=1000
+WWWUSER=1000
+```
+
+建立 DB，啟動並初始化：
 ```bash
-php artisan migrate
-php artisan serve
+# 第一次啟動需 build
+docker compose up -d --build
+
+docker compose exec laravel.test php artisan migrate
+docker compose exec laravel.test php artisan db:seed
+```
+
+啟動背景服務（各開一個 terminal）：
+```bash
+# Queue worker
+docker compose exec laravel.test php artisan queue:work
+
+# RabbitMQ consumer
+docker compose exec laravel.test php artisan rabbitmq:consume-article-created
 ```
 
 ---
