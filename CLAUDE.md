@@ -34,7 +34,13 @@
 - ✅ Laravel：ArticleCreatedHandler channels 改為從 NotificationRule DB 讀
 - ✅ Laravel：.env 加 RABBITMQ_* 和 DISCORD_WEBHOOK_URL（Webhook URL 待填）
 - ✅ 整條鏈路驗證：FastAPI → RabbitMQ → Scrapy → gRPC → Scrapy → RabbitMQ → Laravel → DB
-- ⏳ Django：搜尋 / 過濾功能
+- ✅ Scrapy：PublishCrawlerFinishedPipeline（spider_closed 發布到 crawler_finished_queue，取代逐篇通知）
+- ✅ Laravel：CRAWLER_FINISHED 事件、CrawlerFinishedHandler、ConsumeCrawlerFinished command
+- ✅ Laravel：NotifyDispatcher 加入 CRAWLER_FINISHED case；NotificationRuleSeeder 更新
+- ✅ FastAPI：GET /news 加 keyword / source filter；回傳 NewsListResponse（含 total / page / limit）
+- ✅ Django：新聞列表搜尋（關鍵字 + 來源篩選）+ 分頁功能
+- ✅ PostgreSQL：news.title trigram index（pg_trgm，via Alembic migration）
+- ⏳ Discord Webhook URL 填入 .env，測試 Discord 通知（需桌機設定）
 - ⏳ Django：UserSourcePreference（用戶追蹤特定來源，日後推播用）
 
 Phase 2.5 完成後 → Dockerfile + 部署到 Railway（含 PostgreSQL + RabbitMQ）

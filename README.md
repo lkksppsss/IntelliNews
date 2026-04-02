@@ -14,6 +14,54 @@
 
 ---
 
+## 0. 基礎服務（PostgreSQL + RabbitMQ）— Docker 安裝
+
+PostgreSQL 和 RabbitMQ 用 Docker 跑最方便，不需要本機安裝。
+
+在任意目錄建立 `docker-compose.infra.yml`（或直接放在 repo 根目錄）：
+
+```yaml
+services:
+  postgres:
+    image: postgres:16
+    container_name: intellinews_postgres
+    environment:
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: intellinews_rabbitmq
+    ports:
+      - "5672:5672"    # AMQP
+      - "15672:15672"  # Management UI → http://localhost:15672 (guest/guest)
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+```
+
+啟動：
+```bash
+docker compose -f docker-compose.infra.yml up -d
+```
+
+停止：
+```bash
+docker compose -f docker-compose.infra.yml down
+```
+
+> **注意**：Laravel 的 Sail 也會嘗試連 PostgreSQL 和 RabbitMQ，  
+> Sail 的 `.env` 裡 `DB_HOST` / `RABBITMQ_HOST` 要設成 `host.docker.internal`  
+> 讓 Laravel container 能連到上面這個 Docker container。
+
+---
+
 ## 1. Clone
 
 ```bash
@@ -154,12 +202,12 @@ php artisan key:generate
 編輯 `.env`，填入以下設定：
 ```
 DB_CONNECTION=pgsql
-DB_HOST=host.docker.internal
+DB_HOST=host.docker.internal   # Docker 內連本機 PostgreSQL 用；若 PostgreSQL 也在 Docker 內則改成對應的 service 名稱
 DB_PORT=5432
 DB_DATABASE=laravel_notify
 DB_USERNAME=postgres
 DB_PASSWORD=<password>
-RABBITMQ_HOST=host.docker.internal
+RABBITMQ_HOST=host.docker.internal  # 同上，連本機 RabbitMQ 用
 RABBITMQ_PORT=5672
 RABBITMQ_USER=guest
 RABBITMQ_PASS=guest
@@ -182,8 +230,40 @@ docker compose exec laravel.test php artisan db:seed
 # Queue worker
 docker compose exec laravel.test php artisan queue:work
 
-# RabbitMQ consumer
+# RabbitMQ consumer — 逐篇事件
 docker compose exec laravel.test php artisan rabbitmq:consume-article-created
+
+# RabbitMQ consumer — 爬蟲完成事件
+docker compose exec laravel.test php artisan rabbitmq:consume-crawler-finished
+```
+
+---
+
+## 8. news_crawler_scrapy
+
+```bash
+cd Python/news_crawler_scrapy
+poetry install
+```
+
+設定在 `news_crawler_scrapy/settings.py`，依實際環境修改：
+```python
+MQ_HOST = "localhost"    # RabbitMQ 位址
+MQ_PORT = 5672
+GRPC_HOST = "localhost"  # crawler_grpc_server 位址
+GRPC_PORT = 50051
+```
+
+**手動觸發爬蟲**（跑完即結束）：
+```bash
+poetry run scrapy crawl pts_list_spider
+poetry run scrapy crawl cna_rss_spider
+poetry run scrapy crawl udn_list_spider
+```
+
+**Worker 模式**（監聽 `crawl_jobs` queue，由 FastAPI 觸發）：
+```bash
+poetry run python worker.py
 ```
 
 ---
